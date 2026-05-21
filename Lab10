@@ -1,0 +1,95 @@
+// 7 Segment Pin Tanımlamaları:
+// 29: Nokta, 28: Orta çizgi(G), 27: Sol üst(F), 26: Sol alt(E), 25: Alt(D), 24: Sağ alt(C), 23: Sağ üst(B), 22: Üst(A)
+
+// YENİ SIRALAMA: 
+// basamaklar[0] = 33 (Birler)
+// basamaklar[1] = 34 (Onlar)
+// basamaklar[2] = 35 (Yüzler)
+// basamaklar[3] = 36 (Binler)
+int basamaklar[4] = {33, 34, 35, 36}; 
+
+void hepsiHigh() {
+  digitalWrite(28, HIGH);
+  digitalWrite(27, HIGH);
+  digitalWrite(26, HIGH);
+  digitalWrite(25, HIGH);
+  digitalWrite(24, HIGH);
+  digitalWrite(23, HIGH);
+  digitalWrite(22, HIGH);
+}
+
+void hepsiLow() {
+  digitalWrite(29, LOW);
+  digitalWrite(28, LOW);
+  digitalWrite(27, LOW);
+  digitalWrite(26, LOW);
+  digitalWrite(25, LOW);
+  digitalWrite(24, LOW);
+  digitalWrite(23, LOW);
+  digitalWrite(22, LOW);
+}
+
+void sayiyazdir(int sayi) {
+  switch (sayi) {
+    case 0: hepsiHigh(); digitalWrite(28, LOW); break;
+    case 1: hepsiLow();  digitalWrite(23, HIGH); digitalWrite(24, HIGH); break;
+    case 2: hepsiHigh(); digitalWrite(27, LOW);  digitalWrite(24, LOW); break;
+    case 3: hepsiHigh(); digitalWrite(27, LOW);  digitalWrite(26, LOW); break;
+    case 4: hepsiHigh(); digitalWrite(22, LOW);  digitalWrite(26, LOW); digitalWrite(25, LOW); break;
+    case 5: hepsiHigh(); digitalWrite(23, LOW);  digitalWrite(26, LOW); break;
+    case 6: hepsiHigh(); digitalWrite(23, LOW);  break;
+    case 7: hepsiLow();  digitalWrite(22, HIGH); digitalWrite(23, HIGH); digitalWrite(24, HIGH); break;
+    case 8: hepsiHigh(); break;
+    case 9: hepsiHigh(); digitalWrite(26, LOW);  break;
+  }
+}
+
+void basamaktaGoster(int basamakIndex, int sayi) {
+  // Önce tüm basamakları kapat (Gölge/hayalet efekti olmasın)
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(basamaklar[i], HIGH); // Ortak Katot için HIGH = KAPALI
+  }
+  
+  // Segment çizgilerini ayarla
+  sayiyazdir(sayi);
+  
+  // Sadece ilgili basamağı aç
+  digitalWrite(basamaklar[basamakIndex], LOW); // Ortak Katot için LOW = AÇIK
+  delay(5); // Gözün algılaması için kısa bekleme
+}
+
+void setup() {
+  // Segment pinleri çıkış yapılıyor
+  for (int pin = 22; pin <= 29; pin++) {
+    pinMode(pin, OUTPUT);
+  }
+  // Basamak pinleri çıkış yapılıyor
+  for (int i = 0; i < 4; i++) {
+    pinMode(basamaklar[i], OUTPUT);
+    digitalWrite(basamaklar[i], HIGH); // Başlangıçta hepsi kapalı
+  }
+}
+
+int sayac = 0;
+unsigned long eskiZaman = 0;
+
+void loop() {
+  // Zamanı delay kullanmadan akıtıyoruz (Ekranın titrememesi için şart)
+  if (millis() - eskiZaman >= 1000) {
+    eskiZaman = millis();
+    sayac++;
+    if (sayac > 9999) sayac = 0; 
+  }
+
+  // Sayıyı basamaklarına ayırıyoruz
+  int binler = (sayac / 1000) % 10;
+  int yuzler = (sayac / 100) % 10;
+  int onlar  = (sayac / 10) % 10;
+  int birler = sayac % 10;
+
+  // Yeni pin sıralamana göre tarama yapıyoruz:
+  basamaktaGoster(0, birler);                    // 33 numaralı pin -> Birler basamağı
+  if (sayac >= 10)   basamaktaGoster(1, onlar);  // 34 numaralı pin -> Onlar basamağı
+  if (sayac >= 100)  basamaktaGoster(2, yuzler); // 35 numaralı pin -> Yüzler basamağı
+  if (sayac >= 1000) basamaktaGoster(3, binler); // 36 numaralı pin -> Binler basamağı
+}
